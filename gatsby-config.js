@@ -2,13 +2,14 @@
 require('dotenv').config({
   path: `.env.${process.env.NODE_ENV}`,
 })
+const slugify = require('slugify')
 
 module.exports = {
   siteMetadata: {
     title: `WebriQ Gatsby + Strapi Starter Template`,
     author: `WebriQ`,
     description: `WebriQ Gatsby Starter Template with its blog posts coming Strapi app instance.`,
-    siteUrl: `https://webriq-gatsby-strapi-starter-template.webriq.me/`,
+    siteUrl: `https://webriq-gatsby-cms-starter-template-strapi.webriq.me`,
     social: {
       twitter: `kylemathews`,
     },
@@ -53,60 +54,63 @@ module.exports = {
       },
     },
     `gatsby-plugin-sitemap`,
-    // {
-    //   resolve: `gatsby-plugin-feed`,
-    //   options: {
-    //     query: `
-    //       {
-    //         site {
-    //           siteMetadata {
-    //             title
-    //             description
-    //             siteUrl
-    //             site_url: siteUrl
-    //           }
-    //         }
-    //       }
-    //     `,
-    //     feeds: [
-    //       {
-    //         serialize: ({ query: { site, allStrapiPosts } }) => {
-    //           return allStrapiPosts.edges.map(edge => {
-    //             return Object.assign({}, edge.node, {
-    //               description: edge.node.excerpt,
-    //               date: edge.node.createdAt,
-    //               url: site.siteMetadata.siteUrl + edge.node.fields.slug,
-    //               guid: site.siteMetadata.siteUrl + edge.node.fields.slug,
-    //               custom_elements: [{ 'content:encoded': edge.node.excerpt }],
-    //             })
-    //           })
-    //         },
-    //         query: `
-    //           {
-    //             allStrapiPosts(
-    //               filter: { status: { eq: "published" } }
-    //               sort: { fields: [createdAt], order: DESC }
-    //             ) {
-    //               edges {
-    //                 node {
-    //                   id
-    //                   title
-    //                   excerpt
-    //                   createdAt
-    //                   fields {
-    //                     slug
-    //                   }
-    //                 }
-    //               }
-    //             }
-    //           }
-    //         `,
-    //         output: '/rss.xml',
-    //         title: "Your Site's RSS Feed",
-    //       },
-    //     ],
-    //   },
-    // },
+    {
+      resolve: `gatsby-plugin-feed`,
+      options: {
+        query: `
+          {
+            site {
+              siteMetadata {
+                title
+                description
+                siteUrl
+                site_url: siteUrl
+              }
+            }
+          }
+        `,
+        feeds: [
+          {
+            serialize: ({ query: { site, allStrapiPosts } }) => {
+              return allStrapiPosts.edges.map(edge => {
+                return Object.assign({}, edge.node, {
+                  description: edge.node.shortdescription || edge.node.excerpt,
+                  date: edge.node.date || edge.node.created_at,
+                  url:
+                    site.siteMetadata.siteUrl +
+                    '/' +
+                    slugify(edge.node.title.toLowerCase()),
+                  guid:
+                    site.siteMetadata.siteUrl +
+                    '/' +
+                    slugify(edge.node.title.toLowerCase()),
+                  custom_elements: [{ 'content:encoded': edge.node.body }],
+                })
+              })
+            },
+            query: `
+              {
+                allStrapiPosts(sort: {fields: date, order: ASC}) {
+                  edges {
+                    node {
+                      id
+                      title
+                      body
+                      shortdescription
+                      excerpt
+                      date
+                      created_at
+                    }
+                  }
+                }
+              }
+            `,
+            output: '/rss.xml',
+            title: "Your Site's RSS Feed",
+          },
+        ],
+      },
+    },
     {
       resolve: `gatsby-plugin-manifest`,
       options: {

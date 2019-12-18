@@ -35,84 +35,74 @@ class BlogTemplate extends React.Component {
 				<div class="blog-section">
 					<Container>
 						<div class="row justify-content-between">
-							{console.log(data)}
 							<div class="col-md-7">
-								{data.allStrapiPosts.edges.length !== 0 ? (
-									data.allStrapiPosts.edges.map(blog => (
-										<div class="blog-item bg-light" key={blog.node.id}>
-											<div class="row">
-												<div class="col-lg-4 pr-lg-0">
-													<Link to="/">
-														<div
-															class="blog-image h-100"
-															style={{
-																backgroundImage: `url(${
-																	blog.node.banner !== null
-																		? blog.node.banner.childImageSharp.fluid.src
-																		: 'https://source.unsplash.com/user/joshhild/500x500'
-																})`,
-															}}
-														/>
+								{data.allStrapiPosts.edges.map(blog => (
+									<div class="blog-item bg-light" key={blog.node.id}>
+										<div class="row">
+											<div class="col-lg-4 pr-lg-0">
+												<Link to="/">
+													<div
+														class="blog-image h-100"
+														style={{
+															backgroundImage: `url(${
+																blog.node.banner !== null
+																	? blog.node.banner.childImageSharp.fluid.src
+																	: 'https://source.unsplash.com/user/joshhild/500x500'
+															})`,
+														}}
+													/>
+												</Link>
+											</div>
+											<div class="col-lg-8 pl-lg-0">
+												<div class="blog-text">
+													<Link to={slugify(blog.node.title.toLowerCase())}>
+														<h4>{blog.node.title}</h4>
 													</Link>
-												</div>
-												<div class="col-lg-8 pl-lg-0">
-													<div class="blog-text">
-														<Link to={slugify(blog.node.title.toLowerCase())}>
-															<h4>{blog.node.title}</h4>
-														</Link>
-														{
-															<div class="text-muted small">
-																{blog &&
-																blog.node &&
-																blog.node.categories &&
-																blog.node.categories.length !== 0
-																	? blog.node.categories.map(ct => (
-																			<span key={ct.id}>
-																				<i class="fa fa-folder pr-1" />
+													{
+														<div class="text-muted small">
+															{blog &&
+															blog.node &&
+															blog.node.categories &&
+															blog.node.categories.length !== 0
+																? blog.node.categories.map(ct => (
+																		<span key={ct.id}>
+																			<i class="fa fa-folder pr-1" />
 
-																				<Link
-																					to={slugify(ct.title.toLowerCase())}
-																				>
-																					{ct.title + ' '}
-																				</Link>
-																			</span>
-																	  ))
-																	: null}
-															</div>
-														}
-														<p class="pt-2 text-muted">{blog.node.excerpt}</p>
-														<span class="text-muted small">
-															<i class="fa fa-calendar-o pr-1" />
-															{blog.node.date ||
-																moment(blog.node.created_at).format(
-																	'MMMM DD, YYYY'
-																)}
-														</span>
-													</div>
+																			<Link
+																				to={slugify(ct.title.toLowerCase())}
+																			>
+																				{ct.title + ' '}
+																			</Link>
+																		</span>
+																  ))
+																: null}
+														</div>
+													}
+													<p class="pt-2 text-muted">{blog.node.excerpt}</p>
+													<span class="text-muted small">
+														<i class="fa fa-calendar-o pr-1" />
+														{blog.node.date ||
+															moment(blog.node.created_at).format(
+																'MMMM DD, YYYY'
+															)}
+													</span>
 												</div>
 											</div>
 										</div>
-									))
-								) : (
-									<div>
-										<h2>No Posts</h2> <br />{' '}
-										<Link to="/blog" className="btn btn-primary">
-											Go Back to Blog
-										</Link>
 									</div>
-								)}
+								))}
 							</div>
 							<div class="col-md-4 mb-4">
 								<div class="side-content">
 									<h6 class="text-uppercase text-muted">Categories</h6>
 									<ul class="list-unstyled">
-										{data.allStrapiCategories.edges.map(cat => (
-											<li key={cat.node.id}>
+										{data.allStrapiPosts.group.map(cat => (
+											<li key={cat.fieldValue}>
 												<Link
 													class="text-body font-weight-bold"
-													to={slugify(cat.node.title.toLowerCase())}
+													to={slugify(cat.fieldValue.toLowerCase())}
 												>
-													{cat.node.title}
+													{cat.fieldValue}
 												</Link>
 											</li>
 										))}
@@ -153,7 +143,7 @@ class BlogTemplate extends React.Component {
 export default BlogTemplate
 
 export const blogQuery = graphql`
-	query CategoryTemplateQuery($title: String!) {
+	query CategoryTemplateQuery {
 		site {
 			siteMetadata {
 				title
@@ -161,9 +151,7 @@ export const blogQuery = graphql`
 				description
 			}
 		}
-		allStrapiPosts(
-			filter: { categories: { elemMatch: { title: { eq: $title } } } }
-		) {
+		allStrapiPosts {
 			edges {
 				node {
 					id
@@ -184,13 +172,8 @@ export const blogQuery = graphql`
 					}
 				}
 			}
-		}
-		allStrapiCategories(sort: { fields: title, order: ASC }) {
-			edges {
-				node {
-					id
-					title
-				}
+			group(field: categories___title) {
+				fieldValue
 			}
 		}
 	}

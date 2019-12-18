@@ -82,13 +82,13 @@ const Blogs = ({ data }) => (
             <div class="side-content">
               <h6 class="text-uppercase text-muted">Categories</h6>
               <ul class="list-unstyled">
-                {data.allStrapiCategories.edges.map(cat => (
-                  <li key={cat.node.id}>
+                {data.allStrapiPosts.group.map(cat => (
+                  <li key={cat.fieldValue}>
                     <Link
                       class="text-body font-weight-bold"
-                      to={slugify(cat.node.title.toLowerCase())}
+                      to={slugify(cat.fieldValue.toLowerCase())}
                     >
-                      {cat.node.title}
+                      {cat.fieldValue}
                     </Link>
                   </li>
                 ))}
@@ -158,13 +158,8 @@ export const blogQuery = graphql`
           }
         }
       }
-    }
-    allStrapiCategories(sort: { fields: title, order: ASC }) {
-      edges {
-        node {
-          id
-          title
-        }
+      group(field: categories___title) {
+        fieldValue
       }
     }
   }
