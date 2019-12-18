@@ -1,71 +1,169 @@
 import React from 'react'
-import { Link, graphql } from 'gatsby'
-
-import Layout from '../components/Layout'
+import Layout from '../components/layout'
+import { graphql, Link } from 'gatsby'
+import { Container } from 'reactstrap'
 import SEO from '../components/seo'
-import { rhythm } from '../utils/typography'
+import moment from 'moment'
+const slugify = require('slugify')
 
-class BlogIndex extends React.Component {
-  render() {
-    const { data } = this.props
-    const siteTitle = data.site.siteMetadata.title
-    const posts = data.allStrapiPosts.edges
+const Blogs = ({ data }) => (
+  <Layout>
+    <SEO
+      title="Latest Posts"
+      description={data.site.siteMetadata.description}
+    />
+    <div class="page-headline">
+      <div class="container">
+        <div class="section-heading text-center">
+          <h6 class="font-weight-bold text-uppercase flair">Blog</h6>
+          <h1>
+            <strong>Latest Posts</strong>
+          </h1>
+        </div>
+      </div>
+    </div>
+    <div class="blog-section">
+      <Container>
+        <div class="row justify-content-between">
+          <div class="col-md-7">
+            {data.allStrapiPosts.edges.map(blog => (
+              <div class="blog-item bg-light" key={blog.node.id}>
+                <div class="row">
+                  <div class="col-lg-4 pr-lg-0">
+                    <Link to="/">
+                      <div
+                        class="blog-image h-100"
+                        style={{
+                          backgroundImage: `url(${
+                            blog.node.banner !== null
+                              ? blog.node.banner.childImageSharp.fluid.src
+                              : 'https://source.unsplash.com/user/joshhild/500x500'
+                          })`,
+                        }}
+                      />
+                    </Link>
+                  </div>
+                  <div class="col-lg-8 pl-lg-0">
+                    <div class="blog-text">
+                      <Link to={slugify(blog.node.title.toLowerCase())}>
+                        <h4>{blog.node.title}</h4>
+                      </Link>
+                      {
+                        <div class="text-muted small">
+                          {blog &&
+                          blog.node &&
+                          blog.node.categories &&
+                          blog.node.categories.length !== 0
+                            ? blog.node.categories.map(ct => (
+                                <span key={ct.id}>
+                                  <i class="fa fa-folder pr-1" />
 
-    return (
-      <Layout location={this.props.location} title={siteTitle}>
-        <SEO
-          title="All posts"
-          keywords={[`blog`, `gatsby`, `javascript`, `react`]}
-        />
-        {posts.map(({ node }) => {
-          const title = node.title
-          return (
-            <div key={node.fields.slug}>
-              <h3
-                style={{
-                  marginBottom: rhythm(1 / 4),
-                }}
-              >
-                <Link style={{ boxShadow: `none` }} to={node.fields.slug}>
-                  {title}
-                </Link>
-              </h3>
-              <small>{node.date}</small>
-              <p dangerouslySetInnerHTML={{ __html: node.excerpt }} />
+                                  <Link to={slugify(ct.title.toLowerCase())}>
+                                    {ct.title + ' '}
+                                  </Link>
+                                </span>
+                              ))
+                            : null}
+                        </div>
+                      }
+                      <p class="pt-2 text-muted">{blog.node.excerpt}</p>
+                      <span class="text-muted small">
+                        <i class="fa fa-calendar-o pr-1" />
+                        {blog.node.date ||
+                          moment(blog.node.created_at).format('MMMM DD, YYYY')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="side-content">
+              <h6 class="text-uppercase text-muted">Categories</h6>
+              <ul class="list-unstyled">
+                {data.allStrapiCategories.edges.map(cat => (
+                  <li key={cat.node.id}>
+                    <Link
+                      class="text-body font-weight-bold"
+                      to={slugify(cat.node.title.toLowerCase())}
+                    >
+                      {cat.node.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
-          )
-        })}
-      </Layout>
-    )
-  }
-}
+            <div class="side-content">
+              <h6 class="text-uppercase text-muted">Keep Up-to-Date</h6>
+              <p class="small">
+                Get our latest news and updates straight to your inbox. Enter
+                your email address to subscribe:
+              </p>
+              <form>
+                <div class="form-group">
+                  <input
+                    id="blogEmail"
+                    class="form-control"
+                    type="email"
+                    required=""
+                  />
+                  <label htmlFor="blogEmail">Email address</label>
+                </div>
+                <div class="form-group mb-4">
+                  <button class="btn btn-primary" type="submit">
+                    Subscribe
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </Container>
+    </div>
+  </Layout>
+)
 
-export default BlogIndex
+export default Blogs
 
-export const pageQuery = graphql`
+export const blogQuery = graphql`
   query {
     site {
       siteMetadata {
         title
+        author
+        description
       }
     }
-    allStrapiPosts(
-      filter: { status: { eq: "published" } }
-      sort: { fields: [createdAt], order: DESC }
-    ) {
+    allStrapiPosts {
       edges {
         node {
           id
           title
           excerpt
-          createdAt(fromNow: true)
-          updatedAt(fromNow: true)
-          fields {
-            slug
-          }
-          author {
+          shortdescription
+          body
+          categories {
             id
+            title
           }
+          created_at
+          date(formatString: "MMMM DD, YYYY")
+          banner {
+            childImageSharp {
+              fluid {
+                src
+              }
+            }
+          }
+        }
+      }
+    }
+    allStrapiCategories(sort: { fields: title, order: ASC }) {
+      edges {
+        node {
+          id
+          title
         }
       }
     }

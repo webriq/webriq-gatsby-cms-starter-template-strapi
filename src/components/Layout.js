@@ -1,72 +1,36 @@
 import React from 'react'
-import { Link } from 'gatsby'
-import { rhythm, scale } from '../utils/typography'
+import PropTypes from 'prop-types'
+import { useStaticQuery, graphql } from 'gatsby'
+import Header from './header/header'
+import Footer from './footer/footer'
+// import "./layout.css"
+import './layout.scss'
 import 'bootstrap/dist/css/bootstrap.css'
-import Header from './Header'
+import 'font-awesome/css/font-awesome.min.css'
+import './font-face.css'
 
-class Layout extends React.Component {
-  render() {
-    const { location, title, children } = this.props
-    const rootPath = `${__PATH_PREFIX__}/`
-    let header
-
-    if (location.pathname === rootPath) {
-      header = (
-        <h1
-          style={{
-            ...scale(1.5),
-            marginBottom: rhythm(1.5),
-            marginTop: 0,
-          }}
-        >
-          <Link
-            style={{
-              boxShadow: `none`,
-              textDecoration: `none`,
-              color: `inherit`,
-            }}
-            to={`/`}
-          >
-            {title}
-          </Link>
-        </h1>
-      )
-    } else {
-      header = (
-        <h3
-          style={{
-            fontFamily: `Montserrat, sans-serif`,
-            marginTop: 0,
-          }}
-        >
-          <Link
-            style={{
-              boxShadow: `none`,
-              textDecoration: `none`,
-              color: `inherit`,
-            }}
-            to={`/`}
-          >
-            {title}
-          </Link>
-        </h3>
-      )
+const Layout = ({ children }) => {
+  const data = useStaticQuery(graphql`
+    query SiteTitleQuery {
+      site {
+        siteMetadata {
+          title
+        }
+      }
     }
-    return (
-      <div>
-        <Header/>
-        <div className="container py-5">
-        {header}
-        {children}
-        <footer>
-          © {new Date().getFullYear()}, Built with
-          {` `}
-          <a href="https://webriq.com">WebriQ</a>
-        </footer>
-        </div>
-      </div>
-    )
-  }
+  `)
+
+  return (
+    <>
+      <Header siteTitle={data.site.siteMetadata.title} />
+      <main>{children}</main>
+      <Footer />
+    </>
+  )
+}
+
+Layout.propTypes = {
+  children: PropTypes.node.isRequired,
 }
 
 export default Layout

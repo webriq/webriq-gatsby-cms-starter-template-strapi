@@ -1,30 +1,50 @@
-const path = require(`path`)
+const path = require('path')
 const slugify = require('slugify')
-const fs = require('fs')
-const { createFilePath } = require(`gatsby-source-filesystem`)
+
+function mapEdgesToNodes(data) {
+  if (!data.edges) return []
+  return data.edges.map(edge => edge.node)
+}
+
+function createSlug(text) {
+  return slugify(text, {
+    replacement: '-', // replace spaces with replacement
+    remove: /[*+~.()'"!:@?]/g, // regex to remove characters
+    lower: true, // result in lower case
+  })
+}
+
+const makeRequest = (graphql, request) =>
+  new Promise((resolve, reject) => {
+    // Query for nodes to use in creating pages.
+    resolve(
+      graphql(request).then(result => {
+        if (result.errors) {
+          reject(result.errors)
+        }
+        return result
+      })
+    )
+  })
 
 exports.createPages = ({ graphql, actions }) => {
   const { createPage } = actions
 
-  const blogPost = path.resolve(`./src/templates/blog-post.js`)
-  return graphql(
-    `
-      query {
-        allStrapiPosts(
-          filter: { status: { ne: "unpublished" } }
-          sort: { fields: [createdAt], order: DESC }
-        ) {
-          edges {
-            node {
-              id
-              fields {
-                slug
-              }
-            }
+  const getStrapPost = makeRequest(
+    graphql,
+    `query {
+      allStrapiPosts{
+        edges {
+          node {
+            id
+            title
+            date(formatString: "MMMM DDDD, YYYY")
+            created_at
           }
         }
       }
-    `
+    }
+ `
   ).then(result => {
     if (result.errors) {
       throw result.errors
@@ -32,63 +52,61 @@ exports.createPages = ({ graphql, actions }) => {
 
     // Create blog posts pages.
     const posts = result.data.allStrapiPosts.edges
-    console.log(posts)
 
     posts.forEach((post, index) => {
       const previous = index === posts.length - 1 ? null : posts[index + 1].node
       const next = index === 0 ? null : posts[index - 1].node
 
       createPage({
-        path: post.node.fields.slug,
-        component: blogPost,
+        path: slugify(post.node.title.toLowerCase()),
+        component: path.resolve(`./src/templates/blog-template.js`),
         context: {
           id: post.node.id,
-          slug: post.node.fields.slug,
+          slug: slugify(post.node.title.toLowerCase()),
           previous,
           next,
         },
       })
     })
   })
-}
 
-exports.onCreateNode = ({ node, actions, getNode }) => {
-  const { createNodeField } = actions
-
-  if (node.internal.type === `MarkdownRemark`) {
-    const value = createFilePath({ node, getNode })
-    createNodeField({
-      name: `slug`,
-      node,
-      value,
-    })
-  }
-
-  // Create slug field for Strapi posts
-  if (node.internal.type === `StrapiPosts`) {
-    const slugify_title = slugify(node.title, {
-      replacement: '-', // replace spaces with replacement
-      remove: /[,*+~.()'"!:@]/g, // regex to remove characters
-      lower: true, // result in lower case
-    })
-
-    // Create slug field all lowercased and separated with dashes
-    createNodeField({
-      node,
-      name: `slug`,
-      value: slugify_title,
-    })
-  }
-}
-
-// Write site admin URL on post build
-exports.onPostBuild = () => {
-  fs.writeFile(
-    './public/site.json',
-    JSON.stringify({ siteAdminUrl: process.env.API_URL + '/admin' }),
-    'utf8',
-    function(err) {
-      console.log(err)
+  const getStrapiCategory = makeRequest(
+    graphql,
+    `query {
+       allStrapiCategories {
+         edges {
+           node {
+             id
+             title
+           }
+         }
+       }
+     }
+  `
+  ).then(result => {
+    if (result.errors) {
+      throw result.errors
     }
-  )
+
+    // Create blog posts pages.
+    const posts = result.data.allStrapiCategories.edges
+
+    posts.forEach((post, index) => {
+      const previous = index === posts.length - 1 ? null : posts[index + 1].node
+      const next = index === 0 ? null : posts[index - 1].node
+
+      createPage({
+        path: slugify(post.node.title.toLowerCase()),
+        component: path.resolve(`./src/templates/category.js`),
+        context: {
+          title: post.node.title,
+          slug: slugify(post.node.title.toLowerCase()),
+          previous,
+          next,
+        },
+      })
+    })
+  })
+
+  return Promise.all([getStrapPost, getStrapiCategory])
 }
