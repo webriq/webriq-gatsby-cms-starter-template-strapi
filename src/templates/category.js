@@ -143,7 +143,7 @@ class BlogTemplate extends React.Component {
 export default BlogTemplate
 
 export const blogQuery = graphql`
-	query CategoryTemplateQuery {
+	query CategoryTemplateQuery($title: String!) {
 		site {
 			siteMetadata {
 				title
@@ -151,7 +151,9 @@ export const blogQuery = graphql`
 				description
 			}
 		}
-		allStrapiPosts {
+		allStrapiPosts(
+			filter: { categories: { elemMatch: { title: { eq: $title } } } }
+		) {
 			edges {
 				node {
 					id
